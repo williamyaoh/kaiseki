@@ -22,14 +22,13 @@ mod errors {
 use errors::*;
 
 use std::process;
-use std::io::stderr;
+use std::io::{stdout, stderr};
 use std::io::Write;
 use std::io;
 
 use std::collections::BTreeMap;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::mem;
 use std::iter::IntoIterator;
 
 use docopt::Docopt;
@@ -124,152 +123,139 @@ fn go(filepaths: Vec<String>) -> Result<()> {
   let mut errors = Vec::new();
 
   let mut sections = Vec::new();
-  let mut lookup: BTreeMap<String, Rc<RefCell<Section>>> = BTreeMap::new();
 
-  enum State {
-    Insert,
-    Before(String),
-    After(String)
-  }
+  {
+    let mut lookup: BTreeMap<String, Rc<RefCell<Section>>> = BTreeMap::new();
 
-  for file in files {
-    use std::io::{BufReader, BufRead};
+    enum State {
+      Insert,
+      Before(String),
+      After(String)
+    }
 
-    let filename = Rc::new(file.name);
-    let lines = BufReader::new(file.contents).lines();
-    let mut lines = lines
-      .enumerate()
-      .map(|(lineno, line)| (lineno+1, line))
-      .peekable();
+    for file in files {
+      use std::io::{BufReader, BufRead};
 
-    let mut state = State::Insert;
-    let mut last_block = Block::new(filename.clone(), 1);
+      let filename = Rc::new(file.name);
+      let lines = BufReader::new(file.contents).lines();
+      let mut lines = lines
+        .enumerate()
+        .map(|(lineno, line)| (lineno+1, line))
+        .peekable();
 
-    loop {
-      let next_anchor = process_block_lines(&mut lines, &mut last_block, &mut errors);
+      let mut state = State::Insert;
+      let mut last_block = Block::new(filename.clone(), 1);
 
-      if last_block.contents.len() > 0 {
-        match state {
-          State::Insert => {
-            let section = Section::Normal(last_block);
-            let section = Rc::new(RefCell::new(section));
+      loop {
+        let next_anchor = process_block_lines(&mut lines, &mut last_block, &mut errors);
 
-            sections.push(section);
-          },
-          State::After(label) => {
-            match lookup.get_mut(&label) {
-              None => {
-                errors.push(format!("error: {}: anchor {} doesn't exist", filename, label));
-                let section = Section::Normal(last_block);
+        if last_block.contents.len() > 0 {
+          match state {
+            State::Insert => {
+              let section = Section::Normal(last_block);
+              let section = Rc::new(RefCell::new(section));
+
+              sections.push(section);
+            },
+            State::After(label) => {
+              match lookup.get_mut(&label) {
+                None => {
+                  errors.push(format!("error: {}: anchor {} doesn't exist", filename, label));
+                  let section = Section::Normal(last_block);
+                  let section = Rc::new(RefCell::new(section));
+
+                  sections.push(section);
+                },
+                Some(section) => {
+                  let mut section_ref = section.borrow_mut();
+                  let section: &mut Section = &mut section_ref;
+
+                  if let &mut Section::Anchored { ref mut after, .. } = section {
+                    after.push(last_block);
+                  }
+
+                  // No reason to worry if the section is a Normal. We don't
+                  // ever put that kind of section in `lookup'.
+                }
+              };
+            },
+            State::Before(label) => {
+              match lookup.get_mut(&label) {
+                None => {
+                  errors.push(format!("error: {}: anchor {} doesn't exist", filename, label));
+                  let section = Section::Normal(last_block);
+                  let section = Rc::new(RefCell::new(section));
+
+                  sections.push(section);
+                }
+                Some(section) => {
+                  let mut section_ref = section.borrow_mut();
+                  let section: &mut Section = &mut section_ref;
+                  
+                  if let &mut Section::Anchored { ref mut before, .. } = section {
+                    before.push(last_block);
+                  }
+
+                  // No reason to worry if the section is a Normal. We don't
+                  // every put that kind of section in `lookup'.
+                }
+              };
+            }
+          };
+        }
+
+        match next_anchor {
+          None => break,
+          Some(anchor) => {
+            use parsing::Anchor;
+
+            match anchor {
+              Anchor::Insert => state = State::Insert,
+              Anchor::Before(label) => state = State::Before(label),
+              Anchor::After(label) => state = State::After(label),
+              Anchor::Label(label) => {
+                let section = Section::Anchored {
+                  before: Vec::new(),
+                  after: Vec::new()
+                };
                 let section = Rc::new(RefCell::new(section));
 
-                sections.push(section);
-              },
-              Some(section) => {
-                let mut section_ref = section.borrow_mut();
-                let section: &mut Section = &mut section_ref;
+                sections.push(section.clone());
+                lookup.insert(label, section.clone());
 
-                if let &mut Section::Anchored { ref mut after, .. } = section {
-                  after.push(last_block);
-                }
-
-                // No reason to worry if the section is a Normal. We don't
-                // ever put that kind of section in `lookup'.
+                state = State::Insert;
               }
             };
-          },
-          State::Before(label) => {
-            match lookup.get_mut(&label) {
-              None => {
-                errors.push(format!("error: {}: anchor {} doesn't exist", filename, label));
-                let section = Section::Normal(last_block);
-                let section = Rc::new(RefCell::new(section));
 
-                sections.push(section);
-              }
-              Some(section) => {
-                let mut section_ref = section.borrow_mut();
-                let section: &mut Section = &mut section_ref;
-                
-                if let &mut Section::Anchored { ref mut before, .. } = section {
-                  before.push(last_block);
-                }
-
-                // No reason to worry if the section is a Normal. We don't
-                // every put that kind of section in `lookup'.
-              }
+            let lineno = match lines.peek() {
+              None => 9999999,
+              Some(&(lineno, ref _line)) => lineno
             };
+
+            last_block = Block::new(filename.clone(), lineno);
           }
         };
       }
-
-      match next_anchor {
-        None => break,
-        Some(anchor) => {
-          use parsing::Anchor;
-
-          match anchor {
-            Anchor::Insert => state = State::Insert,
-            Anchor::Before(label) => state = State::Before(label),
-            Anchor::After(label) => state = State::After(label),
-            Anchor::Label(label) => {
-              let section = Section::Anchored {
-                before: Vec::new(),
-                after: Vec::new()
-              };
-              let section = Rc::new(RefCell::new(section));
-
-              sections.push(section.clone());
-              lookup.insert(label, section.clone());
-
-              state = State::Insert;
-            }
-          };
-
-          let lineno = match lines.peek() {
-            None => 9999999,
-            Some(&(lineno, ref _line)) => lineno
-          };
-
-          last_block = Block::new(filename.clone(), lineno);
-        }
-      };
     }
   }
 
-  // So that the try_unwrap() below will succeed
-  mem::drop(lookup);
+  let sections = {
+    let mut result = Vec::new();
 
-  for section in sections {
-    let section = Rc::try_unwrap(section);
-
-    if let Err(_) = section {
-      writeln!(stderr(), "what").unwrap();
-    }
-
-    if let Ok(section) = section {
+    for section in sections {
+      let section = Rc::try_unwrap(section).map_err(|_| {
+        "invariant failed: section had more than one strong reference"
+      }).unwrap();
       let section = section.into_inner();
 
-      match section {
-        Section::Normal(block) => for line in block.contents {
-          println!("{}", line);
-        },
-        Section::Anchored { before, after } => {
-          for block in before.into_iter().rev() {
-            for line in block.contents {
-              println!("{}", line);
-            }
-          }
-
-          for block in after.into_iter() {
-            for line in block.contents {
-              println!("{}", line);
-            }
-          }
-        }
-      };
+      result.push(section);
     }
-  }
+
+    result
+  };
+  let out: Box<Write> = Box::new(stdout());
+
+  print_processed_output(sections, out)?;
 
   for error in errors {
     writeln!(stderr(), "{}", error)
@@ -316,4 +302,35 @@ fn process_block_lines<I>(lines: &mut I, block: &mut Block, errors: &mut Vec<Str
   }
 
   None
+}
+
+/// Print all the lines in the order that they should be.
+fn print_processed_output(sections: Vec<Section>, mut out: Box<Write>) -> Result<()> {
+  macro_rules! try_output {
+    ($format:expr, $($arg:expr),*) => {
+      writeln!(out, $format, $($arg),*).chain_err(|| "failed to write output")?
+    }
+  }
+
+  for section in sections {
+    match section {
+      Section::Normal(block) => for line in block.contents {
+        try_output!("{}", line);
+      },
+      Section::Anchored { before, after } => {
+        for block in before.into_iter().rev() {
+          for line in block.contents {
+            try_output!("{}", line);
+          }
+        }
+        for block in after.into_iter() {
+          for line in block.contents {
+            try_output!("{}", line);
+          }
+        }
+      }
+    };
+  }
+
+  Ok(())
 }

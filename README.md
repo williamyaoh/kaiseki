@@ -113,27 +113,27 @@ void foo() {
 
 There are **4** commands that can be used in **anchors**.
 
-**insert**
-
-Don't do an rearrangement on the following block of lines. Simply
-place them as-is at the end of the output.
-
-**label** <*arg*>
-
-Create a new insertion point at the current end of output with the
-given name. A way to think about it is that any text inserted at
-this label will "expand" outward from where the label itself is.
-
-**before** <*arg*>
-
-Insert the following block of lines *before* the given label.
-
-If multiple blocks get inserted before a given label, the *first*
-block seen and processed will be the *last* to appear in the output.
-
-**after** <*arg*>
-
-Insert the following block of lines *after* the given label.
-
-If multiple blocks get inserted after a given label, the *first*
-block seen and processed will be the *first* to appear in the output.
++ **insert**
+  
+  Don't do a rearrangement on the following block of lines. Simply
+  place them as-is at the end of the output.
+  
++ **label** <*arg*>
+  
+  Create a new insertion point at the current end of output with the
+  given name. A way to think about it is that any text inserted at
+  this label will "expand" outward from where the label itself is.
+  
++ **before** <*arg*>
+  
+  Insert the following block of lines *before* the given label.
+  
+  If multiple blocks get inserted before a given label, the *first*
+  block seen and processed will be the *last* to appear in the output.
+  
++ **after** <*arg*>
+  
+  Insert the following block of lines *after* the given label.
+  
+  If multiple blocks get inserted after a given label, the *first*
+  block seen and processed will be the *first* to appear in the output.

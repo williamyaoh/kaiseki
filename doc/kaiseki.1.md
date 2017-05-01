@@ -118,7 +118,7 @@ There are **4** commands that can be used in **anchors**.
 
 **insert**
 
-Don't do an rearrangement on the following block of lines. Simply
+Don't do a rearrangement on the following block of lines. Simply
 place them as-is at the end of the output.
 
 **label** <*arg*>

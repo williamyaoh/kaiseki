@@ -46,12 +46,14 @@ static USAGE: &'static str = "
 kaiseki -- literate programming preprocessing
 
 Usage:
-    kaiseki [<files>...]
+    kaiseki [options] [(<files> | [-])...]
     kaiseki (--help | --version)
 
 Options:
     -h, --help              Display this help message
     --version               Display version information
+    --comment, -c COMMENT   Add comments to output showing where lines of code
+                            came from. Prefix them with the comment syntax COMMENT.
 
 Tangles together all lines of code into a single file, which then
 gets output to `stdout'. See kaiseki(1) for a description of the
@@ -60,7 +62,8 @@ literate programming syntax.
 
 #[derive(RustcDecodable)]
 struct CLIArgs {
-  arg_files: Vec<String>
+  arg_files: Vec<String>,
+  flag_comment: Option<String>
 }
 
 fn main() {
@@ -76,7 +79,7 @@ fn main() {
     other => other.exit()
   }).unwrap();
 
-  if let Err(ref e) = go(cli_args.arg_files) {
+  if let Err(ref e) = go(cli_args) {
     writeln!(stderr(), "kaiseki: {}", e)
       .unwrap();
 
@@ -116,8 +119,8 @@ enum Section {
   }
 }
 
-fn go(filepaths: Vec<String>) -> Result<()> {
-  let files = input::open_files(filepaths)?;
+fn go(args: CLIArgs) -> Result<()> {
+  let files = input::open_files(args.arg_files)?;
 
   // Errors that we accumulate during processing. We output them at the end.
   let mut errors = Vec::new();
@@ -239,23 +242,9 @@ fn go(filepaths: Vec<String>) -> Result<()> {
     }
   }
 
-  let sections = {
-    let mut result = Vec::new();
-
-    for section in sections {
-      let section = Rc::try_unwrap(section).map_err(|_| {
-        "invariant failed: section had more than one strong reference"
-      }).unwrap();
-      let section = section.into_inner();
-
-      result.push(section);
-    }
-
-    result
-  };
+  let sections = unpack_sections(sections);
   let out: Box<Write> = Box::new(stdout());
-
-  print_processed_output(sections, out)?;
+  print_processed_output(sections, args.flag_comment, out)?;
 
   for error in errors {
     writeln!(stderr(), "{}", error)
@@ -304,26 +293,58 @@ fn process_block_lines<I>(lines: &mut I, block: &mut Block, errors: &mut Vec<Str
   None
 }
 
+/// Get rid of all that indirection around our sections.
+fn unpack_sections(sections: Vec<Rc<RefCell<Section>>>) -> Vec<Section> {
+  let mut result = Vec::new();
+
+  for section in sections {
+    // this unwrap should never fail
+    let section = Rc::try_unwrap(section)
+      .map_err(|_| "invariant failed: section had more than one strong reference")
+      .unwrap();
+    let section = section.into_inner();
+
+    result.push(section);
+  }
+
+  result
+}
+
 /// Print all the lines in the order that they should be.
-fn print_processed_output(sections: Vec<Section>, mut out: Box<Write>) -> Result<()> {
+fn print_processed_output(sections: Vec<Section>, comment: Option<String>, mut out: Box<Write>) -> Result<()> {
   macro_rules! try_output {
     ($format:expr, $($arg:expr),*) => {
       writeln!(out, $format, $($arg),*).chain_err(|| "failed to write output")?
     }
   }
+  macro_rules! block_header {
+    ($block:expr) => {
+      if let &Some(ref leader) = &comment {
+        writeln!(out, "{} '{}', line {}", leader, $block.from, $block.line)
+          .chain_err(|| "failed to write output")?
+      }
+    }
+  }
+
+  // Typically, we only have confusion over where *inserted* blocks are
+  // coming from. So we don't bother outputting headers for normal sections.
 
   for section in sections {
     match section {
-      Section::Normal(block) => for line in block.contents {
-        try_output!("{}", line);
+      Section::Normal(block) => {
+        for line in block.contents {
+          try_output!("{}", line);
+        }
       },
       Section::Anchored { before, after } => {
         for block in before.into_iter().rev() {
+          block_header!(block);
           for line in block.contents {
             try_output!("{}", line);
           }
         }
         for block in after.into_iter() {
+          block_header!(block);
           for line in block.contents {
             try_output!("{}", line);
           }

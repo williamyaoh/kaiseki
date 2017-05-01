@@ -95,7 +95,6 @@ void foo() {
 The output would (approximately) be:
 
 ```c
-
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+pandoc --standalone --from markdown --to man kaiseki.1.md -o kaiseki.1
+sed -i 's/\.TH.*/.TH "kaiseki" "1"/g' kaiseki.1

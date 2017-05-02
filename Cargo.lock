@@ -1,6 +1,6 @@
 [root]
 name = "kaiseki"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "docopt 0.7.0 (registry+file:///nix/store/wq93jj300i3fm243nrqczrhinhw6mnx9-rustRegistry-2017-02-19-d822c58)",
  "error-chain 0.9.0 (registry+file:///nix/store/wq93jj300i3fm243nrqczrhinhw6mnx9-rustRegistry-2017-02-19-d822c58)",

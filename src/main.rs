@@ -33,7 +33,7 @@ use std::iter::IntoIterator;
 
 use docopt::Docopt;
 
-static VERSION: &'static str = "0.1.1";
+static VERSION: &'static str = "0.1.2";
 macro_rules! VERSION_INFO {
   () => { "\
 kaiseki {}

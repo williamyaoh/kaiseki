@@ -152,6 +152,7 @@ fn go(args: CLIArgs) -> Result<()> {
       loop {
         let next_anchor = process_block_lines(&mut lines, &mut last_block, &mut errors);
 
+        // Stick the last block where it needs to go.
         if last_block.contents.len() > 0 {
           match state {
             State::Insert => {
@@ -207,6 +208,7 @@ fn go(args: CLIArgs) -> Result<()> {
           };
         }
 
+        // Process the next anchor we've found and create sections accordingly.
         match next_anchor {
           None => break,
           Some(anchor) => {

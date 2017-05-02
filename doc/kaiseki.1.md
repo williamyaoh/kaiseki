@@ -4,8 +4,10 @@ kaiseki - unintrusive literate programming preprocessor
 
 # SYNOPSIS
 
-kaiseki [<file> ...]
+kaiseki [\<file\> ...]
+
 kaiseki (--help | -h)
+
 kaiseki --version
 
 # DESCRIPTION

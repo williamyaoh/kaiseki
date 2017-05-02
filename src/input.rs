@@ -60,10 +60,10 @@ fn open_file(file: String) -> Result<File> {
           name: file,
           contents: Box::new(contents)
         },
-        Err(err) => return Err(Error::with_chain(
-          err,
-          ErrorKind::CouldNotOpenFile(file)
-        ))
+        Err(err) => return {
+          let err = Err(err);
+          err.chain_err(|| ErrorKind::CouldNotOpenFile(file))
+        }
       }
     }
   )

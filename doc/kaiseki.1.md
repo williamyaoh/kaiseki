@@ -125,9 +125,11 @@ place them as-is at the end of the output.
 
 **label** <*arg*>
 
-Create a new insertion point at the current end of output with the
-given name. A way to think about it is that any text inserted at
-this label will "expand" outward from where the label itself is.
+Create a new insertion point wherever lines are currently being inserted.
+Can be used inside the "scope" of a `##[before(<label>)]` or a `##[after(<label>)]`.
+
+An intuitive way to think about it is that inserted lines will "expand" outward from
+the position of the label in the text.
 
 **before** <*arg*>
 

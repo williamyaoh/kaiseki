@@ -139,10 +139,13 @@ Simply place them as\-is at the end of the output.
 .PP
 \f[B]label\f[] <\f[I]arg\f[]>
 .PP
-Create a new insertion point at the current end of output with the given
-name.
-A way to think about it is that any text inserted at this label will
-"expand" outward from where the label itself is.
+Create a new insertion point wherever lines are currently being
+inserted.
+Can be used inside the "scope" of a \f[C]##[before(<label>)]\f[] or a
+\f[C]##[after(<label>)]\f[].
+.PP
+An intuitive way to think about it is that inserted lines will "expand"
+outward from the position of the label in the text.
 .PP
 \f[B]before\f[] <\f[I]arg\f[]>
 .PP

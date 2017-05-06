@@ -102,8 +102,8 @@ pub fn tangle_output(inputs: Vec<File>, options: OutputOptions) -> (Vec<String>,
   use parsing::Anchor;
   use processing_errors::ErrorKind;
 
-  let mut tangled: Tangled = List::new();
-  let mut anchors: BTreeMap<String, ::Anchor> = BTreeMap::new();
+  let mut tangled = List::new();
+  let mut anchors = BTreeMap::new();
   let mut errors = Vec::new();  // Errors that we accrue during processing.
 
   for input in inputs {
@@ -114,7 +114,7 @@ pub fn tangle_output(inputs: Vec<File>, options: OutputOptions) -> (Vec<String>,
       .enumerate()
       .map(|(lineno, line)| (lineno + 1, line));
     let mut state = OutputTarget::Insert;
-    let mut tangled_section: Tangled = List::new();
+    let mut tangled_section = List::new();
     let mut block = Block::new(filename.clone(), 1);
 
     macro_rules! emplace_section {
@@ -213,7 +213,7 @@ fn maybe_block_header(block: &Block, options: &OutputOptions) -> Option<String> 
   match &options.comment {
     &Some(ref comment_prefix) => {
       let header = format!(
-        "{} ########## '{}', line {} ##########",
+        "{} '{}', line {}",
         comment_prefix,
         &block.file,
         block.lineno

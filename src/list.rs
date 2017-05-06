@@ -5,12 +5,9 @@
 //! doesn't have an `append_front()` method, for some ungodly reason.
 
 use std::marker::PhantomData;
-use std::ops::Drop;
 use std::mem;
 
-use std::iter::Iterator;
-use std::iter::{FromIterator, IntoIterator};
-use std::iter::{DoubleEndedIterator, ExactSizeIterator};
+use std::iter::FromIterator;
 
 /// A doubly-linked list with owned nodes.
 /// `List` allows pushing and popping elements at either end in constant time.

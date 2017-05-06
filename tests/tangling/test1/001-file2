@@ -1,0 +1,11 @@
+fn foo() -> usize {
+  2
+}
+
+// ##[after(Header)]
+
+use std::iter::IntoIterator;
+
+// ##[after(Main)]
+
+println!("Hello world!");

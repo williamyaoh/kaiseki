@@ -106,13 +106,6 @@ fn parse_op(tokens: &mut VecDeque<Token>) -> Result<Anchor> {
   })
 }
 
-fn maybe_parse_arg(tokens: &mut VecDeque<Token>) -> Option<String> {
-  match parse_arg(tokens) {
-    Ok(arg) => Some(arg),
-    Err(_) => None
-  }
-}
-
 fn parse_arg(tokens: &mut VecDeque<Token>) -> Result<String> {
   check_next!(tokens {
     Token::AnchorOpArg(str) => {

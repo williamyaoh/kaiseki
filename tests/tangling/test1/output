@@ -1,0 +1,13 @@
+//! A module or something.
+
+
+use std::iter::IntoIterator;
+
+
+fn main() {
+  
+  println!("Hello world!");
+}
+fn foo() -> usize {
+  2
+}

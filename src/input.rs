@@ -1,4 +1,4 @@
-//! For dealing with the command-line files.
+//! For opening the files passed as arguments on the command line.
 
 use std::io::Read;
 
@@ -44,6 +44,7 @@ pub fn open_files(mut files: Vec<String>) -> Result<Vec<File>> {
 fn open_file(file: String) -> Result<File> {
   use std::io;
   use std::fs;
+  use std::path;
   use std::convert::From;
 
   Ok(
@@ -51,6 +52,11 @@ fn open_file(file: String) -> Result<File> {
       File {
         name: From::from("<stdin>"),
         contents: Box::new(io::stdin())
+      }
+    } else if { let path: &path::Path = file.as_ref(); path.is_dir() } {
+      File {
+        name: file,
+        contents: Box::new(io::empty())
       }
     } else {
       let contents = fs::File::open(&file);

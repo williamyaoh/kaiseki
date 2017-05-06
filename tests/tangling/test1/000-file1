@@ -1,0 +1,7 @@
+//! A module or something.
+
+// ##[label(Header)]
+
+fn main() {
+  // ##[label(Main)]
+}

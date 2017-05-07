@@ -7,11 +7,27 @@
 kaiseki \- unintrusive literate programming preprocessor
 .SH SYNOPSIS
 .PP
-kaiseki [<file> ...]
+kaiseki [options] [<file> ...]
 .PP
 kaiseki (\-\-help | \-h)
 .PP
 kaiseki \-\-version
+.SH OPTIONS
+.TP
+.B \-c, \-\-comment \f[I]COMMENT\f[]
+Add comments to tangled output file showing which file and line number
+each section came from.
+Prefix each comment with the given comment syntax.
+.RS
+.RE
+.TP
+.B \-i, \-\-ignore\-errors
+Exit normally and squelch all error messages that occur during
+processing (by default, kaiseki will exit abnormally if any errors are
+found).
+Not recommended.
+.RS
+.RE
 .SH DESCRIPTION
 .PP
 \f[B]kaiseki\f[] aims to be a simple\-to\-use, humble preprocessor.

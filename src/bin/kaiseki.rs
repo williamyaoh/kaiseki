@@ -9,6 +9,12 @@ extern crate kaiseki;
 
 mod errors {
   error_chain! {
+    errors {
+      Processing {
+        description("encountered errors while tangling output")
+        display("encountered errors while tangling output")
+      }
+    }
     links {
       Input(::kaiseki::input::errors::Error, ::kaiseki::input::errors::ErrorKind);
     }
@@ -24,7 +30,7 @@ use std::io::Write;
 use errors::*;
 use kaiseki::input;
 
-static VERSION: &'static str = "0.2.1";
+static VERSION: &'static str = "0.2.2";
 macro_rules! VERSION_INFO {
   () => { "\
 kaiseki {}
@@ -45,6 +51,9 @@ Options:
     --version               Display version information
     --comment, -c COMMENT   Add comments to output showing where lines of code
                             came from. Prefix them with the comment syntax COMMENT.
+    --ignore-errors, -i     Exit normally and squelch all errors that come up
+                            while tangling files (by default, kaiseki will exit
+                            abnormally if any errors are found). Not recommended.
 
 Tangles together all lines of code into a single file, which then
 gets output to `stdout'. See kaiseki(1) for a description of the
@@ -54,7 +63,8 @@ literate programming syntax.
 #[derive(RustcDecodable)]
 struct CLIArgs {
   arg_files: Vec<String>,
-  flag_comment: Option<String>
+  flag_comment: Option<String>,
+  flag_ignore_errors: bool
 }
 
 fn main() {
@@ -96,10 +106,13 @@ fn go(args: CLIArgs) -> Result<()> {
     println!("{}", line);
   }
 
-  for error in errors {
-    writeln!(stderr(), "kaiseki: {}", error)
-      .unwrap();
+  if !args.flag_ignore_errors && !errors.is_empty() {
+    for error in errors {
+      writeln!(stderr(), "kaiseki: {}", error)
+        .unwrap();
+    }
+    Err(ErrorKind::Processing.into())
+  } else {
+    Ok(())
   }
-
-  Ok(())
 }

@@ -4,11 +4,21 @@ kaiseki - unintrusive literate programming preprocessor
 
 # SYNOPSIS
 
-kaiseki [\<file\> ...]
+kaiseki [options] [\<file\> ...]
 
 kaiseki (--help | -h)
 
 kaiseki --version
+
+# OPTIONS
+
+-c, --comment *COMMENT*
+: Add comments to tangled output file showing which file and line number each section came from.
+  Prefix each comment with the given comment syntax.
+
+-i, --ignore-errors
+: Exit normally and squelch all error messages that occur during processing (by default, kaiseki will
+  exit abnormally if any errors are found). Not recommended.
 
 # DESCRIPTION
 

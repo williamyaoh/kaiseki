@@ -37,6 +37,7 @@ pub mod processing_errors {
 use std::rc::Rc;
 use std::io;
 use std::result;
+use std::default::Default;
 
 use std::collections::BTreeMap;
 
@@ -45,6 +46,14 @@ use list::List;
 
 pub struct OutputOptions {
   pub comment: Option<String>
+}
+
+impl Default for OutputOptions {
+  fn default() -> Self {
+    OutputOptions {
+      comment: None
+    }
+  }
 }
 
 struct Block {

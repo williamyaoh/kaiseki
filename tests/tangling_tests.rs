@@ -26,11 +26,20 @@ fn test_test1() {
 fn test_test2() {
   static OUTPUT: &'static str = include_str!("tangling/test2/output");
 
-  let files = [ "tests/tangling/test2/000-file1"
-              , "tests/tangling/test2/001-file2"
-              , "tests/tangling/test2/002-file3"
-              ];
-  let files: Vec<String> = files.iter().map(|str| str.to_string()).collect();
+  let files = [
+    "000-file1",
+    "001-file2",
+    "002-file3"
+  ];
+
+  let files: Vec<String> = files.iter().map(|str| {
+    let mut filepath = String::new();
+    filepath.push_str("tests/tangling/test2/");
+    filepath.push_str(str);
+    filepath
+  })
+  .collect();
+
   let files = input::open_files(files).unwrap();
 
   let output_options = kaiseki::OutputOptions {

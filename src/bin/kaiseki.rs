@@ -30,7 +30,7 @@ use std::io::Write;
 use errors::*;
 use kaiseki::input;
 
-static VERSION: &'static str = "0.2.2";
+static VERSION: &'static str = "0.2.3";
 macro_rules! VERSION_INFO {
   () => { "\
 kaiseki {}

@@ -86,7 +86,8 @@ impl Anchor {
   }
 }
 
-/// Essentially a Result. But it makes the types more intuitive to read.
+/// An `Either` represents the situation when *either* arm is a valid
+/// value, as opposed to a `Result`, where one arm designates an error.
 enum Either<T, U> {
   Left(T),
   Right(U)

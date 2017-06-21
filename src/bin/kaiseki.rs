@@ -3,8 +3,8 @@
 //! Used for literate programming.
 
 #[macro_use] extern crate error_chain;
-extern crate docopt;
-extern crate rustc_serialize;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 extern crate kaiseki;
 
 mod errors {
@@ -21,7 +21,7 @@ mod errors {
   }
 }
 
-use docopt::Docopt;
+use structopt::StructOpt;
 
 use std::process;
 use std::io::stderr;
@@ -30,55 +30,21 @@ use std::io::Write;
 use errors::*;
 use kaiseki::input;
 
-static VERSION: &'static str = "0.2.3";
-macro_rules! VERSION_INFO {
-  () => { "\
-kaiseki {}
-copyright (c) 2017 William Yao <williamyaoh@gmail.com>
-license BSD 3-Clause
-no warranty, whether implied or not
-" }
-}
-static USAGE: &'static str = "
-kaiseki -- literate programming preprocessing
-
-Usage:
-    kaiseki [options] [(<files> | [-])...]
-    kaiseki (--help | --version)
-
-Options:
-    -h, --help              Display this help message
-    --version               Display version information
-    --comment, -c COMMENT   Add comments to output showing where lines of code
-                            came from. Prefix them with the comment syntax COMMENT.
-    --ignore-errors, -i     Exit normally and squelch all errors that come up
-                            while tangling files (by default, kaiseki will exit
-                            abnormally if any errors are found). Not recommended.
-
-Tangles together all lines of code into a single file, which then
-gets output to `stdout'. See kaiseki(1) for a description of the
-literate programming syntax.
-";
-
-#[derive(RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "kaiseki", about = "literate programming preprocessor")]
 struct CLIArgs {
-  arg_files: Vec<String>,
-  flag_comment: Option<String>,
-  flag_ignore_errors: bool
+  #[structopt(help = "Files to tangle")]
+  files: Vec<String>,
+
+  #[structopt(short = "c", long = "comment", help = "Show where source lines came from with comments")]
+  comment_leader: Option<String>,
+
+  #[structopt(short = "i", long = "ignore-errors", help = "Exit normally, ignore errors")]
+  ignore_errors: bool
 }
 
 fn main() {
-  let cli_parser = Docopt::new(USAGE).unwrap()
-    .version(Some(VERSION.to_string()))
-    .help(true);
-
-  let cli_args: CLIArgs = cli_parser.decode().map_err(|err| match err {
-    ::docopt::Error::Version(version) => {
-      print!(VERSION_INFO!(), version);
-      process::exit(0);
-    },
-    other => other.exit()
-  }).unwrap();
+  let cli_args = CLIArgs::from_args();
 
   if let Err(ref e) = go(cli_args) {
     writeln!(stderr(), "kaiseki: {}", e)
@@ -94,10 +60,10 @@ fn main() {
 }
 
 fn go(args: CLIArgs) -> Result<()> {
-  let files = input::open_files(args.arg_files)?;
+  let files = input::open_files(args.files)?;
 
   let output_options = kaiseki::OutputOptions {
-    comment: args.flag_comment
+    comment: args.comment_leader
   };
 
   let (output, errors) = kaiseki::tangle_output(files, output_options);
@@ -106,7 +72,7 @@ fn go(args: CLIArgs) -> Result<()> {
     println!("{}", line);
   }
 
-  if !args.flag_ignore_errors && !errors.is_empty() {
+  if !args.ignore_errors && !errors.is_empty() {
     for error in errors {
       writeln!(stderr(), "kaiseki: {}", error)
         .unwrap();
